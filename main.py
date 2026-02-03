@@ -1710,6 +1710,24 @@ def main():
                         continue
 
                     command_low = command.lower().strip()
+
+                    if any(token in command_low for token in ['exit', 'stop', 'quit']):
+                        speak("Goodbye!")
+                        break
+
+                    result = perform_task(command, lang_code)
+                    if result:
+                        speak(result)
+                    else:
+                        print("No action taken or empty input.")
+
+        finally:
+            FACE_RECOGNITION_ACTIVE = False
+            audio_stream.stop_stream()
+            audio_stream.close()
+            pa.terminate()
+            porcupine.delete()
+            cv2.destroyAllWindows()
     else:
         print("Wakeword disabled (no valid ACCESS_KEY). Face detection ACTIVE - running in background.")
         speak("Wakeword is disabled. Face detection is running.", lang_code, ai_gender)
@@ -1718,24 +1736,8 @@ def main():
                 time.sleep(5)
         except KeyboardInterrupt:
             print("Exiting.")
-
-                if any(token in command_low for token in ['exit', 'stop', 'quit']):
-                    speak("Goodbye!")
-                    break
-
-                result = perform_task(command, lang_code)
-                if result:
-                    speak(result)
-                else:
-                    print("No action taken or empty input.")
-
-    finally:
-        FACE_RECOGNITION_ACTIVE = False
-        audio_stream.stop_stream()
-        audio_stream.close()
-        pa.terminate()
-        porcupine.delete()
-        cv2.destroyAllWindows()
+            FACE_RECOGNITION_ACTIVE = False
+            cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
