@@ -1669,45 +1669,56 @@ def main():
     face_thread = threading.Thread(target=face_recognition_loop, daemon=True)
     face_thread.start()
 
+    porcupine = None
     try:
-        porcupine = pvporcupine.create(
-            access_key=ACCESS_KEY,
-            keyword_paths=[INFRA_MODEL_PATH]
-        )
+        if ACCESS_KEY:
+            porcupine = pvporcupine.create(
+                access_key=ACCESS_KEY,
+                keyword_paths=[INFRA_MODEL_PATH]
+            )
     except Exception as e:
         print("Wakeword engine setup failed:", e)
         speak("Wakeword engine failed. Please check configuration.", lang_code, ai_gender)
-        return
 
-    pa = pyaudio.PyAudio()
-    audio_stream = pa.open(
-        rate=porcupine.sample_rate,
-        channels=1,
-        format=pyaudio.paInt16,
-        input=True,
-        frames_per_buffer=porcupine.frame_length
-    )
+    if porcupine:
+        pa = pyaudio.PyAudio()
+        audio_stream = pa.open(
+            rate=porcupine.sample_rate,
+            channels=1,
+            format=pyaudio.paInt16,
+            input=True,
+            frames_per_buffer=porcupine.frame_length
+        )
 
-    print(f"Say {', '.join(ACTIVE_HOTWORDS)} to activate.")
-    print("Face detection ACTIVE - window will open.")
-    speak(f"I'm always listening for {', '.join(ACTIVE_HOTWORDS)}. Face detection enabled.")
+        print(f"Say {', '.join(ACTIVE_HOTWORDS)} to activate.")
+        print("Face detection ACTIVE - window will open.")
+        speak(f"I'm always listening for {', '.join(ACTIVE_HOTWORDS)}. Face detection enabled.")
 
-    try:
-        while True:
-            pcm = audio_stream.read(porcupine.frame_length, exception_on_overflow=False)
-            pcm = np.frombuffer(pcm, dtype=np.int16).tolist()
+        try:
+            while True:
+                pcm = audio_stream.read(porcupine.frame_length, exception_on_overflow=False)
+                pcm = np.frombuffer(pcm, dtype=np.int16).tolist()
 
-            keyword_index = porcupine.process(pcm)
-            if keyword_index >= 0:
-                wakeword = ACTIVE_HOTWORDS[keyword_index]
-                print(f"Wakeword '{wakeword}' detected!")
-                speak("yes??")
+                keyword_index = porcupine.process(pcm)
+                if keyword_index >= 0:
+                    wakeword = ACTIVE_HOTWORDS[keyword_index]
+                    print(f"Wakeword '{wakeword}' detected!")
+                    speak("yes??")
 
-                command = listen(sr_lang=sr_lang)
-                if not command:
-                    continue
+                    command = listen(sr_lang=sr_lang)
+                    if not command:
+                        continue
 
-                command_low = command.lower().strip()
+                    command_low = command.lower().strip()
+    else:
+        print("Wakeword disabled (no valid ACCESS_KEY). Face detection ACTIVE - running in background.")
+        speak("Wakeword is disabled. Face detection is running.", lang_code, ai_gender)
+        try:
+            while True:
+                time.sleep(5)
+        except KeyboardInterrupt:
+            print("Exiting.")
+
                 if any(token in command_low for token in ['exit', 'stop', 'quit']):
                     speak("Goodbye!")
                     break
