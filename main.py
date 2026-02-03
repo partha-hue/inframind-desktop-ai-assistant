@@ -6,6 +6,7 @@ import pickle
 import platform
 import re
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -13,6 +14,10 @@ import urllib.parse
 import webbrowser
 from ctypes import cast, POINTER
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 import cv2
 import numpy as np
 import pvporcupine
